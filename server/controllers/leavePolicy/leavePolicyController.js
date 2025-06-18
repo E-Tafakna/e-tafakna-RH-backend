@@ -50,10 +50,7 @@ const createLeavePolicy = async (req, res) => {
 const getAllLeavePolicies = async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            SELECT lp.*, e.full_name as employee_name, c.name as company_name
-            FROM leave_policy lp
-            JOIN employees e ON lp.employee_id = e.id
-            JOIN company c ON lp.company_id = c.id
+            SELECT * FROM leave_policy
         `);
         res.json(rows);
     } catch (err) {
@@ -65,11 +62,7 @@ const getAllLeavePolicies = async (req, res) => {
 const getLeavePolicyById = async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            SELECT lp.*, e.full_name as employee_name, c.name as company_name
-            FROM leave_policy lp
-            JOIN employees e ON lp.employee_id = e.id
-            JOIN company c ON lp.company_id = c.id
-            WHERE lp.id = ?
+            SELECT * FROM leave_policy WHERE id = ?
         `, [req.params.id]);
         
         if (rows.length === 0) {

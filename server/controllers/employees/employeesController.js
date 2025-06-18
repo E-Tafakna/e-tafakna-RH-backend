@@ -45,7 +45,8 @@ const createEmployee = async (req, res) => {
       marital_status,
       employment_type,
       contract_type,
-      role
+      role,
+      seniority_in_months
     } = req.body;
 
     const [result] = await pool.query(
@@ -53,9 +54,9 @@ const createEmployee = async (req, res) => {
         code_employe, full_name, cin, cin_place, cin_date, place_of_birth, 
         date_of_birth, gender, address, nfc_badge_id, email, phone, 
         profession, brut_salary, net_salary, work_experience, date_of_start, 
-        is_active, cnss_number, nationality, marital_status, employment_type, 
+        is_active, cnss_number, nationality, marital_status, employment_type,seniority_in_months, 
         contract_type, role
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)`,
       [
         code_employe,
         full_name,
@@ -79,8 +80,10 @@ const createEmployee = async (req, res) => {
         nationality,
         marital_status,
         employment_type || 'full_time',
+        seniority_in_months,
         contract_type,
-        role || 'employee'
+        role || 'employee',
+       
       ]
     );
 
@@ -120,7 +123,8 @@ const updateEmployee = async (req, res) => {
       marital_status,
       employment_type,
       contract_type,
-      role
+      role,
+      seniority_in_months
     } = req.body;
 
     const [result] = await pool.query(
@@ -129,7 +133,7 @@ const updateEmployee = async (req, res) => {
         place_of_birth = ?, date_of_birth = ?, gender = ?, address = ?, 
         nfc_badge_id = ?, email = ?, phone = ?, profession = ?, brut_salary = ?, 
         net_salary = ?, work_experience = ?, date_of_start = ?, is_active = ?, 
-        cnss_number = ?, nationality = ?, marital_status = ?, employment_type = ?, 
+        cnss_number = ?, nationality = ?, marital_status = ?, employment_type = ?, seniority_in_months = ?,
         contract_type = ?, role = ?
        WHERE id = ?`,
       [
@@ -155,9 +159,11 @@ const updateEmployee = async (req, res) => {
         nationality,
         marital_status,
         employment_type,
+        seniority_in_months,
         contract_type,
         role,
-        id
+        id,
+      
       ]
     );
 

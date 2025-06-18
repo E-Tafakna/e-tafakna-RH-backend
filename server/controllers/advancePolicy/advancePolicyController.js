@@ -119,10 +119,7 @@ const deleteAdvancePolicy = async (req, res) => {
 const getAllAdvancePolicies = async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            SELECT ap.*, e.full_name as employee_name, c.name as company_name
-            FROM advance_policy ap
-            JOIN employees e ON ap.employee_id = e.id
-            JOIN company c ON ap.company_id = c.id
+            SELECT * FROM advance_policy 
         `);
         res.json(rows);
     } catch (err) {
@@ -133,13 +130,9 @@ const getAllAdvancePolicies = async (req, res) => {
 const getAdvancePolicyById = async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            SELECT ap.*, e.full_name as employee_name, c.name as company_name
-            FROM advance_policy ap
-            JOIN employees e ON ap.employee_id = e.id
-            JOIN company c ON ap.company_id = c.id
-            WHERE ap.id = ?
+            SELECT * FROM advance_policy WHERE id = ?
         `, [req.params.id]);
-        
+
         if (rows.length === 0) {
             return res.status(404).json({ error: 'Advance policy not found' });
         }
@@ -245,7 +238,7 @@ const checkAdvanceEligibility = async (req, res) => {
         if (lastAdvance.length > 0) {
             const lastAdvanceDate = new Date(lastAdvance[0].submission_date);
             const monthsSinceLastAdvance = (new Date() - lastAdvanceDate) / (1000 * 60 * 60 * 24 * 30);
-            
+
             if (monthsSinceLastAdvance < currentPolicy.cooldown_months_between_advance) {
                 eligibility.is_eligible = false;
                 eligibility.reasons.push(`Must wait ${currentPolicy.cooldown_months_between_advance} months between advances`);

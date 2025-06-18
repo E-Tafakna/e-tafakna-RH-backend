@@ -24,6 +24,8 @@ const docToPrintRoutes = require('./routes/docToPrint/docToPrintRoutes');
 const companyRoutes = require('./routes/company/companyRoutes');
 const advancePolicyRoutes = require('./routes/advancePolicy/advancePolicyRoutes');
 const leavePolicyRoutes = require('./routes/leavePolicy/leavePolicyRoutes');
+const depotRequestsRoutes = require('./routes/DepotRequests/depotRequests.routes');
+const notificationsRoutes = require('./routes/Notifications/notifications.routes');
 
 
 var io = require('socket.io')(server, {
@@ -71,6 +73,8 @@ app.use('/api/docs-to-print', docToPrintRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/advance-policy', advancePolicyRoutes);
 app.use('/api/leave-policy', leavePolicyRoutes);
+app.use('/api/depot-requests', depotRequestsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
 
 app.get("/", (req, res) => {

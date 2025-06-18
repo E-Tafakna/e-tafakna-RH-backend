@@ -33,6 +33,10 @@ DROP TABLE IF EXISTS company;
 
 DROP TABLE IF EXISTS employees;
 
+DROP TABLE IF EXISTS depot_requests;
+
+DROP TABLE IF EXISTS notifications;
+
 -- Employees Table
 CREATE TABLE IF NOT EXISTS employees (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -114,6 +118,7 @@ CREATE TABLE IF NOT EXISTS docToPrint (
     id INT AUTO_INCREMENT PRIMARY KEY,
     output_format ENUM('pdf', 'docx', 'html') DEFAULT 'pdf',
     file_url TEXT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -123,7 +128,7 @@ CREATE TABLE IF NOT EXISTS requests (
     employee_id INT,
     type ENUM(
         'leave',
-        'advanvce',
+        'advance',
         'credit',
         'reclamation',
         'document',
@@ -254,5 +259,24 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     employee_id INT,
     action VARCHAR(255),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id)
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (created_by) REFERENCES employees(id)
+);
+
+CREATE TABLE IF NOT EXISTS depot_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    document_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    date_of_deposit DATE, 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES employees(id)
 );

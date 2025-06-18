@@ -142,10 +142,34 @@ const deleteDocumentTemplate = async (req, res) => {
   }
 };
 
+const getDocumentTemplateStats = async (req, res) => {
+  try {
+    const [stats] = await pool.query(`
+      SELECT 
+        dt.name as template_name,
+        COUNT(r.id) as total_requests,
+        COUNT(CASE WHEN r.status = 'en_cours' THEN 1 END) as pending_requests,
+        COUNT(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN 1 END) as approved_requests,
+        COUNT(CASE WHEN r.status = 'traite' AND r.result = 'refused' THEN 1 END) as rejected_requests
+      FROM document_templates dt
+      LEFT JOIN document_request_details drd ON dt.name = drd.document_type
+      LEFT JOIN requests r ON drd.request_id = r.id
+      WHERE dt.visible_on_kiosk = true
+      GROUP BY dt.name
+    `);
+    
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
 module.exports = {
   getAllDocumentTemplates,
   getDocumentTemplateById,
   createDocumentTemplate,
   updateDocumentTemplate,
   deleteDocumentTemplate,
+  getDocumentTemplateStats
 };

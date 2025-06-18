@@ -224,8 +224,7 @@ const getAdvanceRequestStats = async (req, res) => {
         COUNT(CASE WHEN r.status = 'en_cours' THEN 1 END) as pending_requests,
         COUNT(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN 1 END) as approved_requests,
         COUNT(CASE WHEN r.status = 'traite' AND r.result = 'refused' THEN 1 END) as rejected_requests,
-        SUM(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN ard.amount ELSE 0 END) as total_approved_amount,
-        AVG(ard.repayment_months) as avg_repayment_months
+        SUM(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN ard.amount ELSE 0 END) as total_approved_amount
       FROM requests r
       JOIN advance_request_details ard ON r.id = ard.request_id
       WHERE r.type = 'advance'

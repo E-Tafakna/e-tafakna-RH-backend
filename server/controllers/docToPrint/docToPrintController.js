@@ -2,7 +2,7 @@ const db = require('../../database/index');
 
 const createDocToPrint = async (req, res) => {
     try {
-        const { output_format, file_url } = req.body;
+        const { output_format, file_url, file_name } = req.body;
 
         if (!file_url) {
             return res.status(400).json({
@@ -20,8 +20,8 @@ const createDocToPrint = async (req, res) => {
         }
 
         const [result] = await db.execute(
-            'INSERT INTO docToPrint (output_format, file_url) VALUES (?, ?)',
-            [output_format || 'pdf', file_url]
+            'INSERT INTO docToPrint (output_format, file_url , file_name ) VALUES (?, ? , ?)',
+            [output_format || 'pdf', file_url, file_name]
         );
 
         res.status(201).json({
@@ -41,7 +41,7 @@ const createDocToPrint = async (req, res) => {
 
 const getAllDocsToPrint = async (req, res) => {
     try {
-        const { output_format } = req.query;
+        const { output_format, } = req.query;
         let query = 'SELECT * FROM docToPrint WHERE 1=1';
         const params = [];
 
@@ -82,7 +82,7 @@ const getDocToPrintById = async (req, res) => {
 const updateDocToPrint = async (req, res) => {
     try {
         const { id } = req.params;
-        const { output_format, file_url } = req.body;
+        const { output_format, file_url  } = req.body;
 
         const [check] = await db.execute('SELECT id FROM docToPrint WHERE id = ?', [id]);
         if (check.length === 0) {

@@ -1,0 +1,1107 @@
+{
+  "info": {
+    "name": "e-Tafakna RH API Collection",
+    "description": "Complete API collection for e-Tafakna RH system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Employees",
+      "item": [
+        {
+          "name": "Get All Employees",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/employees"
+          }
+        },
+        {
+          "name": "Get Employee by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/employees/:id"
+          }
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/employees",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "code_employe": "12345",
+                "full_name": "John Doe",
+                "cin": "14653617",
+                "cin_place": "Casablanca",
+                "cin_date": "2020-01-01",
+                "place_of_birth": "Tunius",
+                "date_of_birth": "1990-01-01",
+                "gender": "male",
+                "address": "123 Main St",
+                "email": "fares@example.com",
+                "phone": "+216351262",
+                "profession": "Software Engineer",
+                "brut_salary": 15000.00,
+                "net_salary": 12000.00,
+                "date_of_start": "2023-01-01",
+                "cnss_number": "CNSS123456",
+                "nationality": "Tunisien",
+                "marital_status": "maried",
+                "employment_type": "full_time",
+                "contract_type": "CDI"
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/v1/employees/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "full_name": "Lafris sghaier",
+                "address": "456 New St",
+                "phone": "+216251262",
+                "email": "fares.updated@example.com"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Employee",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/employees/:id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Company",
+      "item": [
+        {
+          "name": "Get All Companies",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/company"
+          }
+        },
+        {
+          "name": "Get Company by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/company/:id"
+          }
+        },
+        {
+          "name": "Create Company",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/company",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Company Name",
+                "address": "Company Address",
+                "phone": "+212500000000",
+                "email": "company@example.com",
+                "logo_url": "https://test.com/logo.png",
+                "forme_juridique": "SARL",
+                "Capital": 1000000.00,
+                "registration_number": "REG123456",
+                "tax_id": "TAX123456",
+                "created_by": 1,
+                "owner_name": "Owner Name",
+                "owner_gender": "male",
+                "employee_number": 50
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Company",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/company/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Updated Company Name",
+                "address": "Updated Address",
+                "phone": "+212511111111",
+                "email": "updated@company.com"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Company",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/company/:id"
+          }
+        },
+        {
+          "name": "Get Company Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/company/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Document Templates",
+      "item": [
+        {
+          "name": "Get All Document Templates",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/documentTemplates"
+          }
+        },
+        {
+          "name": "Get Document Template by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/documentTemplates/:id"
+          }
+        },
+        {
+          "name": "Create Document Template",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/documentTemplates",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Work Certificate Template",
+                "template_type": "work_certificate",
+                "description": "Template for work certificates",
+                "file_url": "https://example.com/templates/work-certificate.docx",
+                "output_format": "pdf",
+                "status": "active",
+                "visible_on_kiosk": true,
+                "created_by": 1,
+                "cooldown_months_between_advance": 2,
+                "signature_image_url": "https://example.com/signatures/ceo.png",
+                "signature_position": "bottom_right",
+                "signature_size": "medium",
+                "signature_included": true,
+                "cachet_image_url": "https://example.com/cachets/company.png",
+                "cachet_position": "bottom_right",
+                "cachet_size": "medium",
+                "cachet_included": true
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Document Template",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/documentTemplates/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "name": "Updated Work Certificate Template",
+                "description": "Updated template description",
+                "status": "active"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Document Template",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/documentTemplates/:id"
+          }
+        },
+        {
+          "name": "Get Document Template Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/documentTemplates/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leave Policy",
+      "item": [
+        {
+          "name": "Get All Leave Policies",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leave-policy"
+          }
+        },
+        {
+          "name": "Create Leave Policy",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/leave-policy",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "company_id": 1,
+                "min_months_seniority": 3,
+                "days_per_month_worked": 1.5,
+                "max_days_per_year": 18,
+                "policy_notes": "Standard leave policy"
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Leave Policy",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/leave-policy/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "min_months_seniority": 4,
+                "days_per_month_worked": 1.75,
+                "max_days_per_year": 21,
+                "policy_notes": "Updated leave policy"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Leave Policy",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/leave-policy/:id"
+          }
+        },
+        {
+          "name": "Calculate Available Leave",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leave-policy/calculate/:employeeId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credit Policy",
+      "item": [
+        {
+          "name": "Get All Credit Policies",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/credit-policies"
+          }
+        },
+        {
+          "name": "Create Credit Policy",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/credit-policies",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "company_id": 1,
+                "is_active": true,
+                "min_months_seniority": 12,
+                "max_salary_multiplier": 2.0,
+                "cooldown_months": 12
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Credit Policy",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/credit-policies/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "is_active": true,
+                "min_months_seniority": 18,
+                "max_salary_multiplier": 2.5,
+                "cooldown_months": 18
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Credit Policy",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/credit-policies/:id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Advance Policy",
+      "item": [
+        {
+          "name": "Get All Advance Policies",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-policy"
+          }
+        },
+        {
+          "name": "Get Advance Policy by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-policy/:id"
+          }
+        },
+        {
+          "name": "Get Advance Policy by Employee",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-policy/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Advance Policy",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/advance-policy",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "company_id": 1,
+                "is_active": true,
+                "min_months_seniority": 3,
+                "max_percentage_salary": 30,
+                "cooldown_months_between_advance": 2
+              }
+            }
+          }
+        },
+        {
+          "name": "Check Advance Eligibility",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-policy/check-eligibility/:employeeId"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Audit Logs",
+      "item": [
+        {
+          "name": "Get All Audit Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/audit-logs"
+          }
+        },
+        {
+          "name": "Get Audit Log by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/audit-logs/:id"
+          }
+        },
+        {
+          "name": "Get Audit Logs by Employee",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/audit-logs/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Audit Log",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/audit-logs",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "action": "Created new document"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Audit Log",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/audit-logs/:id"
+          }
+        },
+        {
+          "name": "Get Audit Logs by Date Range",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/audit-logs/date-range?start=2024-01-01&end=2024-12-31"
+          }
+        },
+        {
+          "name": "Get Audit Logs by Action",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/audit-logs/action/:action"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Documents",
+      "item": [
+        {
+          "name": "Get All Documents",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/documents"
+          }
+        },
+        {
+          "name": "Get Document by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/documents/:id"
+          }
+        },
+        {
+          "name": "Get Documents by Employee",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/documents/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Get Documents by Request",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/documents/request/:requestId"
+          }
+        },
+        {
+          "name": "Create Document",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/documents",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "request_id": 1,
+                "document_type": "work_certificate",
+                "file_url": "https://example.com/documents/certificate.pdf",
+                "template_id": 1
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Document",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/v1/documents/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "document_type": "updated_certificate",
+                "file_url": "https://example.com/documents/updated-certificate.pdf"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Document",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/documents/:id"
+          }
+        },
+        {
+          "name": "Get Generated Documents",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/documents/generated"
+          }
+        },
+        {
+          "name": "Get Uploaded Documents",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/documents/uploaded"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Requests",
+      "item": [
+        {
+          "name": "Get All Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/requests"
+          }
+        },
+        {
+          "name": "Get Request by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/requests/:id"
+          }
+        },
+        {
+          "name": "Get Requests by Employee",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/requests/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Request",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/requests",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "type": "leave",
+                "service": "HR",
+                "confidential": false
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Request",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/v1/requests/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "status": "traite",
+                "result": "valide"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Request",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/requests/:id"
+          }
+        },
+        {
+          "name": "Get Requests by Type",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/requests/type/:type"
+          }
+        },
+        {
+          "name": "Get Requests by Status",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/requests/status/:status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/notifications"
+          }
+        },
+        {
+          "name": "Get Notification by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/notifications/:id"
+          }
+        },
+        {
+          "name": "Get Notifications by Creator",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/notifications/creator/:creatorId"
+          }
+        },
+        {
+          "name": "Get Recent Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/notifications/recent?limit=10"
+          }
+        },
+        {
+          "name": "Create Notification",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/notifications",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "title": "System Maintenance",
+                "message": "The system will be down for maintenance on March 25th from 2 AM to 4 AM",
+                "created_by": 1
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Notification",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/notifications/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "title": "Updated System Maintenance",
+                "message": "Updated maintenance schedule: March 26th from 2 AM to 4 AM"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/notifications/:id"
+          }
+        },
+        {
+          "name": "Get Notification Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/notifications/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Depot Requests",
+      "item": [
+        {
+          "name": "Get All Depot Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/depot-requests"
+          }
+        },
+        {
+          "name": "Get Depot Request by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/depot-requests/:id"
+          }
+        },
+        {
+          "name": "Get Depot Requests by Employee",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/depot-requests/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Depot Request",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/depot-requests",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "document_name": "Passport Copy",
+                "description": "Original passport copy for visa application",
+                "date_of_deposit": "2024-03-20"
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Depot Request",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/depot-requests/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "document_name": "Updated Passport Copy",
+                "description": "Updated description",
+                "date_of_deposit": "2024-03-21"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Depot Request",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/depot-requests/:id"
+          }
+        },
+        {
+          "name": "Get Depot Request Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/depot-requests/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Advance Requests",
+      "item": [
+        {
+          "name": "Get All Advance Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-requests"
+          }
+        },
+        {
+          "name": "Get Advance Request by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-requests/:id"
+          }
+        },
+        {
+          "name": "Get Employee Advance Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-requests/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Advance Request",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/advance-requests",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "amount": 10000.00,
+                "reason": "Medical emergency"
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Advance Request Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/advance-requests/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Document Requests",
+      "item": [
+        {
+          "name": "Get All Document Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/document-requests"
+          }
+        },
+        {
+          "name": "Get Document Request by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/document-requests/:id"
+          }
+        },
+        {
+          "name": "Get Employee Document Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/document-requests/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Document Request",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/document-requests",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "document_type": "work_certificate",
+                "notes": "Required for bank loan application"
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Document Request Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/document-requests/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leave Requests",
+      "item": [
+        {
+          "name": "Get All Leave Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leave-requests"
+          }
+        },
+        {
+          "name": "Get Leave Request by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leave-requests/:id"
+          }
+        },
+        {
+          "name": "Get Employee Leave Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leave-requests/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Leave Request",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/leave-requests",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "leave_type": "annuel",
+                "start_date": "2024-04-01",
+                "end_date": "2024-04-05",
+                "reason": "Family vacation"
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Leave Request Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/leave-requests/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Credit Requests",
+      "item": [
+        {
+          "name": "Get All Credit Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/credit-requests"
+          }
+        },
+        {
+          "name": "Get Credit Request by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/credit-requests/:id"
+          }
+        },
+        {
+          "name": "Get Employee Credit Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/credit-requests/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Credit Request",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/credit-requests",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "employee_id": 1,
+                "amount": 50000.00,
+                "months": 12,
+                "description": "Home renovation",
+                "is_exceptional": false
+              }
+            }
+          }
+        },
+        {
+          "name": "Get Credit Request Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/credit-requests/stats/overview"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DocToPrint",
+      "item": [
+        {
+          "name": "Get All Docs to Print",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/docs-to-print"
+          }
+        },
+        {
+          "name": "Get Doc to Print by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/docs-to-print/:id"
+          }
+        },
+        {
+          "name": "Create Doc to Print",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/docs-to-print",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "output_format": "pdf",
+                "file_url": "https://example.com/documents/template.pdf"
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Doc to Print",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/docs-to-print/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "output_format": "docx",
+                "file_url": "https://example.com/documents/updated-template.docx"
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Doc to Print",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/docs-to-print/:id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reclamations",
+      "item": [
+        {
+          "name": "Get All Reclamations",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reclamations"
+          }
+        },
+        {
+          "name": "Get Reclamation by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reclamations/:id"
+          }
+        },
+        {
+          "name": "Get Reclamations by Employee",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reclamations/employee/:employeeId"
+          }
+        },
+        {
+          "name": "Create Reclamation",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/api/v1/reclamations",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "request_id": 1,
+                "category": "generale",
+                "description": "Issue with salary calculation",
+                "confidential": false
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Reclamation",
+          "request": {
+            "method": "PUT",
+            "url": "{{base_url}}/api/v1/reclamations/:id",
+            "body": {
+              "mode": "raw",
+              "raw": {
+                "category": "harcelement_moral",
+                "description": "Updated description",
+                "confidential": true
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Reclamation",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/api/v1/reclamations/:id"
+          }
+        },
+        {
+          "name": "Get Reclamations by Category",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reclamations/category/:category"
+          }
+        },
+        {
+          "name": "Get Confidential Reclamations",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reclamations/confidential"
+          }
+        },
+        {
+          "name": "Get Sensitive Reclamations",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/api/v1/reclamations/sensitive"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3068",
+      "type": "string"
+    }
+  ]
+} 
