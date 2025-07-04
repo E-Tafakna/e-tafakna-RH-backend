@@ -256,7 +256,58 @@ const checkAdvanceEligibility = async (req, res) => {
     }
 }
 
+
+const updateAdvancePolicy = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            company_id,
+            is_active,
+            min_months_seniority,
+            max_percentage_salary,
+            cooldown_months_between_advance
+        } = req.body;
+
+        if (max_percentage_salary !== undefined && (max_percentage_salary < 1 || max_percentage_salary > 100)) {
+            return res.status(400).json({
+                success: false,
+                message: 'max_percentage_salary must be between 1 and 100'
+            });
+        }
+        const [result] = await pool.query(
+            `UPDATE advance_policy SET
+                company_id = ?,
+                is_active = ?,
+                min_months_seniority = ?,
+                max_percentage_salary = ?,
+                cooldown_months_between_advance = ?
+            WHERE id = ?`,
+            [
+                company_id, is_active,
+                min_months_seniority, max_percentage_salary,
+                cooldown_months_between_advance, id
+            ]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Advance policy not found'
+            });
+        }
+        res.json({
+            success: true,
+            message: 'Advance policy updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating advance policy:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error'
+        });
+    }
+}
 module.exports = {
+    updateAdvancePolicy,
     createAdvancePolicy,
     deleteAdvancePolicy,
     getAllAdvancePolicies,

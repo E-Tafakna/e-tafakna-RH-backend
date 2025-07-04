@@ -65,7 +65,8 @@ CREATE TABLE IF NOT EXISTS employees (
     employment_type ENUM('full_time', 'part_time', 'contract', 'intern') DEFAULT 'full_time',
     contract_type ENUM('CDD', 'CDI', 'CIVP', 'Stage', 'Consultant'),
     role ENUM('employee', 'admin') DEFAULT 'employee',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    managerId INT DEFAULT NULL,
 );
 
 -- Company Table
@@ -103,11 +104,21 @@ CREATE TABLE IF NOT EXISTS document_templates (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     signature_image_url TEXT,
-    signature_position ENUM('top_left', 'top_right', 'bottom_left', 'bottom_right') DEFAULT 'bottom_right',
+    signature_position ENUM(
+        'top_left',
+        'top_right',
+        'bottom_left',
+        'bottom_right'
+    ) DEFAULT 'bottom_right',
     signature_size VARCHAR(20) DEFAULT 'medium',
     signature_included BOOLEAN DEFAULT TRUE,
     cachet_image_url TEXT,
-    cachet_position ENUM('top_left', 'top_right', 'bottom_left', 'bottom_right') DEFAULT 'bottom_right',
+    cachet_position ENUM(
+        'top_left',
+        'top_right',
+        'bottom_left',
+        'bottom_right'
+    ) DEFAULT 'bottom_right',
     cachet_size VARCHAR(20) DEFAULT 'medium',
     cachet_included BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (created_by) REFERENCES employees(id)
@@ -119,6 +130,7 @@ CREATE TABLE IF NOT EXISTS docToPrint (
     output_format ENUM('pdf', 'docx', 'html') DEFAULT 'pdf',
     file_url TEXT NOT NULL,
     file_name VARCHAR(255) NOT NULL,
+    doc_description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -269,14 +281,4 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES employees(id)
-);
-
-CREATE TABLE IF NOT EXISTS depot_requests (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    employee_id INT NOT NULL,
-    document_name VARCHAR(255) NOT NULL,
-    description TEXT,
-    date_of_deposit DATE, 
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (employee_id) REFERENCES employees(id)
 );

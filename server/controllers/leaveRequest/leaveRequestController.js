@@ -49,6 +49,80 @@ const getLeaveRequestById = async (req, res) => {
   }
 };
 
+
+const getRemainingLeaveDays = async (req, res) => {
+  try {
+    const { employee_id, leave_type, company_id } = req.body;
+
+    if (!employee_id || !leave_type || !company_id) {
+      return res.status(400).json({
+        error: 'Required fields: employee_id, leave_type, company_id'
+      });
+    }
+
+    const [employeeResult] = await pool.query(
+      'SELECT id FROM employees WHERE id = ?',
+      [employee_id]
+    );
+
+    if (employeeResult.length === 0) {
+      return res.status(400).json({ error: 'Employee not found' });
+    }
+
+    const [leavePolicyResult] = await pool.query(
+      'SELECT * FROM leave_policy WHERE company_id = ?',
+      [company_id]
+    );
+
+    if (!leavePolicyResult.length) {
+      return res.status(400).json({
+        error: 'No leave policy found for this company'
+      });
+    }
+
+    const leavePolicy = leavePolicyResult[0];
+
+    const start_date = new Date(); // use today's date like in your original logic
+    const currentYear = new Date().getFullYear();
+    const yearReferenceDate = new Date(`${currentYear}-01-01`);
+
+    const [leaveBalance] = await pool.query(`
+  SELECT 
+    COALESCE(SUM(
+      CASE 
+        WHEN r.type = ? AND r.status = 'traite' AND r.result = 'valide'
+        THEN DATEDIFF(lrd.end_date, lrd.start_date) + 1
+        ELSE 0
+      END
+    ), 0) as used_days
+  FROM requests r
+  JOIN leave_request_details lrd ON r.id = lrd.request_id
+  WHERE r.employee_id = ?
+  AND YEAR(lrd.start_date) = YEAR(?)
+`, [leave_type, employee_id, yearReferenceDate]);
+
+
+    const usedDays = leaveBalance[0].used_days || 0;
+
+    console.log(usedDays, leaveBalance, "usedDays")
+    const remainingDays = leavePolicy.max_days_per_year - usedDays;
+
+    return res.status(200).json({
+      employee_id,
+      leave_type,
+      year: start_date.getFullYear(),
+      used_days: usedDays,
+      max_allowed: leavePolicy.max_days_per_year,
+      remaining_days: Math.max(0, remainingDays)
+    });
+  } catch (err) {
+    console.error('[getRemainingLeaveDays] error:', err);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+
+
 const createLeaveRequest = async (req, res) => {
   try {
     const {
@@ -156,7 +230,7 @@ const createLeaveRequest = async (req, res) => {
       `, [leave_type, employee_id, start_date]);
 
       const usedDays = leaveBalance[0].used_days || 0;
-
+      console.log(usedDays, "usedDays")
       if (usedDays + duration > leavePolicy.max_days_per_year) {
         return res.status(400).json({
           error: `Leave request exceeds available balance. You have used ${usedDays} days. Max allowed is ${leavePolicy.max_days_per_year}.`
@@ -170,9 +244,9 @@ const createLeaveRequest = async (req, res) => {
     try {
       const [requestResult] = await connection.query(
         `INSERT INTO requests (
-          employee_id, type, service, status, result
-        ) VALUES (?, 'leave', ?, 'en_cours', 'refused')`,
-        [employee_id, service]
+          employee_id, type, service, status, result , is_exceptional
+        ) VALUES (?, 'leave', ?, 'en_cours', 'refused' , ?)`,
+        [employee_id, service, is_exceptional]
       );
 
       const requestId = requestResult.insertId;
@@ -253,5 +327,6 @@ module.exports = {
   getLeaveRequestById,
   createLeaveRequest,
   getEmployeeLeaveRequests,
-  getLeaveRequestStats
+  getLeaveRequestStats,
+  getRemainingLeaveDays
 }; 
