@@ -9,7 +9,7 @@ var connection = mysql.createPool({
     password: process.env.MYSQL_PASSWORD || "Root",
     database: process.env.MYSQL_DATABASE || "etafakna_rh",
     charset: 'utf8mb4', // Ensure UTF-8 encoding
-    port: process.env.DB_PORT || 12747
+    port: process.env.DB_PORT || 3306
 });
 
 

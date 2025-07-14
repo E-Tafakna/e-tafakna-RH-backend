@@ -38,7 +38,7 @@ DROP TABLE IF EXISTS depot_requests;
 DROP TABLE IF EXISTS notifications;
 
 -- Employees Table
-CREATE TABLE IF NOT EXISTS employees (
+CREATE TABLE IF NOT EXISTS employees ( 
     id INT AUTO_INCREMENT PRIMARY KEY,
     code_employe VARCHAR(20) UNIQUE NOT NULL,
     full_name VARCHAR(100) NOT NULL,
@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS employees (
     email VARCHAR(100),
     phone VARCHAR(20),
     profession VARCHAR(100),
+    department VARCHAR(100) NOT NULL,
     brut_salary DECIMAL(10, 2),
     net_salary DECIMAL(10, 2),
     work_experience INT DEFAULT 0,
@@ -67,6 +68,7 @@ CREATE TABLE IF NOT EXISTS employees (
     role ENUM('employee', 'admin') DEFAULT 'employee',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Company Table
 CREATE TABLE IF NOT EXISTS company (
@@ -92,7 +94,7 @@ CREATE TABLE IF NOT EXISTS company (
 CREATE TABLE IF NOT EXISTS document_templates (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    template_type ENUM('Stage', 'travaile',) NOT NULL,
+    template_type ENUM('Stage', 'travaile') NOT NULL,
     description TEXT,
     file_url TEXT,
     output_format ENUM('pdf', 'docx', 'html') DEFAULT 'pdf',
@@ -220,14 +222,13 @@ CREATE TABLE IF NOT EXISTS leave_policy (
 -- Leave Request Details
 CREATE TABLE IF NOT EXISTS leave_request_details (
     request_id INT PRIMARY KEY,
-    leave_type VARCHAR(20) CHECK (
-        leave_type IN ('annuel', 'maladie', 'exceptionnel')
-    ) NOT NULL,
+    leave_type ENUM('annuel', 'maladie', 'exceptionnel') NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     reason TEXT,
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE
 );
+
 
 -- Credit Policy
 CREATE TABLE IF NOT EXISTS credit_policy (
@@ -279,4 +280,21 @@ CREATE TABLE IF NOT EXISTS depot_requests (
     date_of_deposit DATE, 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES employees(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS employee_managers (
+  employee_id INT NOT NULL,
+  manager_id INT NOT NULL,
+  PRIMARY KEY (employee_id, manager_id),
+  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+  FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS employee_ceos (
+  employee_id INT NOT NULL,
+  ceo_id INT NOT NULL,
+  PRIMARY KEY (employee_id, ceo_id),
+  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+  FOREIGN KEY (ceo_id) REFERENCES employees(id) ON DELETE CASCADE
 );
