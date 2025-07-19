@@ -5,7 +5,8 @@ const {
   getAdvanceRequestById,
   createAdvanceRequest,
   getEmployeeAdvanceRequests,
-  getAdvanceRequestStats
+  getAdvanceRequestStats,
+  getHierarchicalAdvanceRequests
 } = require('../../controllers/advanceRequest/advanceRequestController');
 
 // Get all advance requests
@@ -22,5 +23,8 @@ router.get('/employee/:employee_id', getEmployeeAdvanceRequests);
 
 // Get advance request statistics
 router.get('/stats/overview', getAdvanceRequestStats);
+
+router.get('/hierarchy/:employee_id', getHierarchicalAdvanceRequests);
+
 
 module.exports = router; 

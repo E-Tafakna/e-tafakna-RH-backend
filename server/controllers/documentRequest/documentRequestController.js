@@ -158,10 +158,75 @@ const getDocumentRequestStats = async (req, res) => {
   }
 };
 
+const getHierarchicalDocumentRequests = async (req, res) => {
+  try {
+    const employeeId = parseInt(req.params.employee_id);
+    if (isNaN(employeeId)) {
+      return res.status(400).json({ error: 'Invalid employee ID' });
+    }
+
+    const [employeeRows] = await pool.query('SELECT id, profession, role FROM employees WHERE id = ?', [employeeId]);
+    if (employeeRows.length === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const employee = employeeRows[0];
+    let employeeIdsToQuery = [employeeId];
+
+    if (employee.profession === 'CEO' || employee.role === 'admin') {
+      const [subordinates] = await pool.query(`
+        WITH RECURSIVE hierarchy AS (
+          SELECT id FROM employees WHERE id = ?
+          UNION
+          SELECT e.id FROM employees e
+          JOIN employee_ceos ec ON e.id = ec.employee_id
+          JOIN hierarchy h ON ec.ceo_id = h.id
+          UNION
+          SELECT e.id FROM employees e
+          JOIN employee_managers em ON e.id = em.employee_id
+          JOIN hierarchy h ON em.manager_id = h.id
+        )
+        SELECT id FROM hierarchy WHERE id != ?
+      `, [employeeId, employeeId]);
+      
+      employeeIdsToQuery = subordinates.map(s => s.id);
+      employeeIdsToQuery.push(employeeId);
+    } else if (employee.profession.includes('Manager')) {
+      const [subordinates] = await pool.query(`
+        SELECT employee_id as id FROM employee_managers 
+        WHERE manager_id = ?
+      `, [employeeId]);
+      
+      employeeIdsToQuery = subordinates.map(s => s.id);
+      employeeIdsToQuery.push(employeeId);
+    }
+
+    const [rows] = await pool.query(`
+      SELECT 
+        r.*,
+        drd.document_type,
+        drd.reason,
+        drd.urgency_level,
+        e.full_name as employee_name,
+        e.code_employe
+      FROM requests r
+      JOIN document_request_details drd ON r.id = drd.request_id
+      JOIN employees e ON r.employee_id = e.id
+      WHERE r.type = 'document' AND r.employee_id IN (?)
+      ORDER BY r.submission_date DESC
+    `, [employeeIdsToQuery]);
+    
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getAllDocumentRequests,
   getDocumentRequestById,
   createDocumentRequest,
   getEmployeeDocumentRequests,
-  getDocumentRequestStats
+  getDocumentRequestStats,
+  getHierarchicalDocumentRequests
 }; 

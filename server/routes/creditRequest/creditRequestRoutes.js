@@ -5,6 +5,7 @@ const {
   getCreditRequestById,
   createCreditRequest,
   getEmployeeCreditRequests,
+  getHierarchicalCreditRequests,
   getCreditRequestStats
 } = require('../../controllers/creditRequest/creditRequestController');
 
@@ -22,5 +23,8 @@ router.get('/employee/:employee_id', getEmployeeCreditRequests);
 
 // Get credit request statistics
 router.get('/stats/overview', getCreditRequestStats);
+
+router.get('/hierarchy/:employee_id', getHierarchicalCreditRequests);
+
 
 module.exports = router; 

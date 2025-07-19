@@ -9,10 +9,14 @@ const getAllAdvanceRequests = async (req, res) => {
         ard.reason,
         e.full_name as employee_name,
         e.code_employe,
-        e.brut_salary
+        e.brut_salary,
+        e.department as employee_department,
+        cd.department_name as policy_department
       FROM requests r
       JOIN advance_request_details ard ON r.id = ard.request_id
       JOIN employees e ON r.employee_id = e.id
+      LEFT JOIN advance_policy ap ON ard.policy_id = ap.id
+      LEFT JOIN company_departments cd ON ap.department_id = cd.id
       WHERE r.type = 'advance'
       ORDER BY r.submission_date DESC
     `);
@@ -31,10 +35,14 @@ const getAdvanceRequestById = async (req, res) => {
         ard.reason,
         e.full_name as employee_name,
         e.code_employe,
-        e.brut_salary
+        e.brut_salary,
+        e.department as employee_department,
+        cd.department_name as policy_department
       FROM requests r
       JOIN advance_request_details ard ON r.id = ard.request_id
       JOIN employees e ON r.employee_id = e.id
+      LEFT JOIN advance_policy ap ON ard.policy_id = ap.id
+      LEFT JOIN company_departments cd ON ap.department_id = cd.id
       WHERE r.id = ? AND r.type = 'advance'
     `, [req.params.id]);
 
@@ -55,7 +63,8 @@ const createAdvanceRequest = async (req, res) => {
       reason,
       service,
       company_id,
-      is_exceptional = false // default to false
+      is_exceptional = false,
+      exception_reason = null
     } = req.body;
 
     if (!employee_id || !amount) {
@@ -64,9 +73,8 @@ const createAdvanceRequest = async (req, res) => {
       });
     }
 
-    // Check employee exists and get salary
     const [employee] = await pool.query(
-      'SELECT id, brut_salary, seniority_in_months FROM employees WHERE id = ?',
+      'SELECT id, brut_salary, seniority_in_months, department FROM employees WHERE id = ?',
       [employee_id]
     );
 
@@ -74,53 +82,43 @@ const createAdvanceRequest = async (req, res) => {
       return res.status(400).json({ error: 'Employee not found' });
     }
 
-    const brutSalary = employee[0].brut_salary;
-    const employeeSeniority = employee[0].seniority_in_months || 0;
+    const { brut_salary, seniority_in_months, department } = employee[0];
 
-    // Get policy for this company
-    const [policy] = await pool.query(
-      'SELECT * FROM advance_policy WHERE company_id = ?',
-      [company_id]
-    );
+    const [policyResult] = await pool.query(`
+      SELECT ap.*
+      FROM advance_policy ap
+      JOIN company_departments cd ON ap.department_id = cd.id
+      WHERE ap.company_id = ? AND cd.department_name = ?
+    `, [company_id, department]);
 
-    if (policy.length === 0) {
-      return res.status(400).json({ error: 'No advance policy found for this company' });
+    if (policyResult.length === 0) {
+      return res.status(400).json({ error: `No advance policy found for department ${department}` });
     }
 
-    const currentPolicy = policy[0];
+    const policy = policyResult[0];
 
     if (!is_exceptional) {
-      if (!currentPolicy.is_active) {
+      if (!policy.is_active) {
         return res.status(400).json({ error: 'Advance policy is not active' });
       }
 
-      // Check seniority eligibility
-      if (
-        currentPolicy.min_months_seniority !== null &&
-        employeeSeniority < currentPolicy.min_months_seniority
-      ) {
+      if (policy.min_months_seniority !== null && seniority_in_months < policy.min_months_seniority) {
         return res.status(400).json({
-          error: `Employee must have at least ${currentPolicy.min_months_seniority} months of seniority`
+          error: `Employee must have at least ${policy.min_months_seniority} months of seniority`
         });
       }
 
-      // Calculate max allowed amount
-      const maxAdvanceAmount = (brutSalary * currentPolicy.max_percentage_salary) / 100;
-
+      const maxAdvanceAmount = (brut_salary * policy.max_percentage_salary) / 100;
       if (amount > maxAdvanceAmount) {
         return res.status(400).json({
           error: `Amount exceeds maximum allowed (${maxAdvanceAmount})`
         });
       }
 
-      // Check if there is an active advance already
       const [activeAdvances] = await pool.query(`
-        SELECT r.id
-        FROM requests r
+        SELECT r.id FROM requests r
         JOIN advance_request_details ard ON r.id = ard.request_id
-        WHERE r.employee_id = ? 
-          AND r.type = 'advance'
-          AND r.status = 'en_cours'
+        WHERE r.employee_id = ? AND r.type = 'advance' AND r.status = 'en_cours'
       `, [employee_id]);
 
       if (activeAdvances.length > 0) {
@@ -129,57 +127,47 @@ const createAdvanceRequest = async (req, res) => {
         });
       }
 
-      // Cooldown check — get last treated advance
       const [lastAdvance] = await pool.query(`
         SELECT r.submission_date
         FROM requests r
         JOIN advance_request_details ard ON r.id = ard.request_id
-        WHERE r.employee_id = ? 
-          AND r.type = 'advance'
-          AND r.status = 'traite'
+        WHERE r.employee_id = ? AND r.type = 'advance' AND r.status = 'traite'
         ORDER BY r.submission_date DESC
         LIMIT 1
       `, [employee_id]);
 
       if (lastAdvance.length > 0) {
-        const lastAdvanceDate = new Date(lastAdvance[0].submission_date);
-        const monthsSinceLastAdvance =
-          (new Date() - lastAdvanceDate) / (1000 * 60 * 60 * 24 * 30);
+        const lastDate = new Date(lastAdvance[0].submission_date);
+        const monthsSince = (new Date() - lastDate) / (1000 * 60 * 60 * 24 * 30);
 
-        if (
-          currentPolicy.cooldown_months_between_advance !== null &&
-          monthsSinceLastAdvance < currentPolicy.cooldown_months_between_advance
-        ) {
+        if (policy.cooldown_months_between_advance !== null &&
+          monthsSince < policy.cooldown_months_between_advance) {
           return res.status(400).json({
-            error: `Must wait ${currentPolicy.cooldown_months_between_advance} months between advance requests`
+            error: `Must wait ${policy.cooldown_months_between_advance} months between advance requests`
           });
         }
       }
     }
 
-    // Create request and details inside a transaction
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
     try {
-      const [requestResult] = await connection.query(
-        `INSERT INTO requests (
-          employee_id, type, service, status, result
-        ) VALUES (?, 'advance', ?, 'en_cours', 'valide')`,
-        [employee_id, service]
-      );
+      const [requestResult] = await connection.query(`
+        INSERT INTO requests (
+          employee_id, type, service, status, result, is_exceptional, exception_reason
+        ) VALUES (?, 'advance', ?, 'en_cours', 'valide', ?, ?)
+      `, [employee_id, service, is_exceptional, exception_reason]);
 
       const requestId = requestResult.insertId;
 
-      await connection.query(
-        `INSERT INTO advance_request_details (
-          request_id, amount, reason
-        ) VALUES (?, ?, ?)`,
-        [requestId, amount, reason]
-      );
+      await connection.query(`
+        INSERT INTO advance_request_details (
+          request_id, amount, reason, policy_id
+        ) VALUES (?, ?, ?, ?)
+      `, [requestId, amount, reason, policy.id]);
 
       await connection.commit();
-
       res.status(201).json({
         id: requestId,
         message: 'Advance request created successfully'
@@ -204,8 +192,11 @@ const getEmployeeAdvanceRequests = async (req, res) => {
         r.*,
         ard.amount,
         ard.reason,
+        cd.department_name as policy_department
       FROM requests r
       JOIN advance_request_details ard ON r.id = ard.request_id
+      LEFT JOIN advance_policy ap ON ard.policy_id = ap.id
+      LEFT JOIN company_departments cd ON ap.department_id = cd.id
       WHERE r.employee_id = ? AND r.type = 'advance'
       ORDER BY r.submission_date DESC
     `, [req.params.employee_id]);
@@ -224,22 +215,100 @@ const getAdvanceRequestStats = async (req, res) => {
         COUNT(CASE WHEN r.status = 'en_cours' THEN 1 END) as pending_requests,
         COUNT(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN 1 END) as approved_requests,
         COUNT(CASE WHEN r.status = 'traite' AND r.result = 'refused' THEN 1 END) as rejected_requests,
-        SUM(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN ard.amount ELSE 0 END) as total_approved_amount
+        SUM(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN ard.amount ELSE 0 END) as total_approved_amount,
+        cd.department_name,
+        COUNT(CASE WHEN cd.department_name IS NOT NULL THEN 1 END) as department_count
       FROM requests r
       JOIN advance_request_details ard ON r.id = ard.request_id
+      LEFT JOIN advance_policy ap ON ard.policy_id = ap.id
+      LEFT JOIN company_departments cd ON ap.department_id = cd.id
       WHERE r.type = 'advance'
+      GROUP BY cd.department_name
     `);
 
-    res.json(stats[0]);
+    res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
+const getHierarchicalAdvanceRequests = async (req, res) => {
+  try {
+    const employeeId = parseInt(req.params.employee_id);
+    if (isNaN(employeeId)) {
+      return res.status(400).json({ error: 'Invalid employee ID' });
+    }
 
+    // 1. Get employee's role and hierarchy
+    const [employeeRows] = await pool.query('SELECT id, profession, role FROM employees WHERE id = ?', [employeeId]);
+    if (employeeRows.length === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    const employee = employeeRows[0];
+    let employeeIdsToQuery = [employeeId];
+
+    // 2. Determine hierarchy based on role
+    if (employee.profession === 'CEO' || employee.role === 'admin') {
+      // CEO can see all requests under their hierarchy
+      const [subordinates] = await pool.query(`
+        WITH RECURSIVE hierarchy AS (
+          SELECT id FROM employees WHERE id = ?
+          UNION
+          SELECT e.id FROM employees e
+          JOIN employee_ceos ec ON e.id = ec.employee_id
+          JOIN hierarchy h ON ec.ceo_id = h.id
+          UNION
+          SELECT e.id FROM employees e
+          JOIN employee_managers em ON e.id = em.employee_id
+          JOIN hierarchy h ON em.manager_id = h.id
+        )
+        SELECT id FROM hierarchy WHERE id != ?
+      `, [employeeId, employeeId]);
+      
+      employeeIdsToQuery = subordinates.map(s => s.id);
+      employeeIdsToQuery.push(employeeId); // Include CEO's own requests
+    } else if (employee.profession.includes('Manager')) {
+      // Manager can see their own requests and their direct reports' requests
+      const [subordinates] = await pool.query(`
+        SELECT employee_id as id FROM employee_managers 
+        WHERE manager_id = ?
+      `, [employeeId]);
+      
+      employeeIdsToQuery = subordinates.map(s => s.id);
+      employeeIdsToQuery.push(employeeId); // Include manager's own requests
+    }
+    // Regular employees can only see their own requests (default)
+
+    // 3. Fetch advance requests for all relevant employees
+    const [rows] = await pool.query(`
+      SELECT 
+        r.*,
+        ard.amount,
+        ard.reason,
+        e.full_name as employee_name,
+        e.code_employe,
+        e.brut_salary,
+        e.department as employee_department,
+        cd.department_name as policy_department
+      FROM requests r
+      JOIN advance_request_details ard ON r.id = ard.request_id
+      JOIN employees e ON r.employee_id = e.id
+      LEFT JOIN advance_policy ap ON ard.policy_id = ap.id
+      LEFT JOIN company_departments cd ON ap.department_id = cd.id
+      WHERE r.type = 'advance' AND r.employee_id IN (?)
+      ORDER BY r.submission_date DESC
+    `, [employeeIdsToQuery]);
+    
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 module.exports = {
   getAllAdvanceRequests,
   getAdvanceRequestById,
   createAdvanceRequest,
   getEmployeeAdvanceRequests,
-  getAdvanceRequestStats
-}; 
+  getAdvanceRequestStats,
+  getHierarchicalAdvanceRequests
+};
