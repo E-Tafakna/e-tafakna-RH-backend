@@ -178,9 +178,9 @@ const createCreditRequest = async (req, res) => {
     try {
       const [requestResult] = await connection.query(
         `INSERT INTO requests (
-          employee_id, type, service, status, result
-        ) VALUES (?, 'credit', ?, 'en_cours', 'refused')`,
-        [employee_id, service]
+          employee_id, type, service, status, result , is_exceptional
+        ) VALUES (?, 'credit', ?, 'en_cours', 'refused' , ? )`,
+        [employee_id, service , is_exceptional]
       );
 
       const requestId = requestResult.insertId;
