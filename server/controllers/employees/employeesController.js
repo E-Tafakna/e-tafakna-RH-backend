@@ -332,13 +332,37 @@ const getEmployeeByCode = async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+};const checkEmployeeCodeExists = async (req, res) => {
+  try {
+    const { code_employe, cin } = req.query;
+
+    const [codeRows] = await pool.query(
+      'SELECT 1 FROM employees WHERE code_employe = ? LIMIT 1',
+      [code_employe]
+    );
+
+    const [cinRows] = await pool.query(
+      'SELECT 1 FROM employees WHERE cin = ? LIMIT 1',
+      [cin]
+    );
+
+    res.json({
+      code_exists: codeRows.length > 0 ? 1 : 0,
+      cin_exists: cinRows.length > 0 ? 1 : 0,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
+
+
 
 module.exports = {
   getAllEmployees,
   getEmployeeById,
   createEmployee,
   updateEmployee,
+  checkEmployeeCodeExists,
   deleteEmployee,
   getManagers,
   getEmployeeByCode,
