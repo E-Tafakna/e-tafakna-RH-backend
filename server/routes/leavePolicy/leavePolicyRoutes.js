@@ -1,23 +1,34 @@
 const express = require('express');
 const router = express.Router();
-const leavePolicyController = require('../../controllers/leavePolicy/leavePolicyController');
+const {
+  getAllLeavePolicies,
+  getLeavePolicyById,
+  createLeavePolicy,
+  updateLeavePolicy,
+  deleteLeavePolicy,
+  checkLeaveEligibility,
+  getEmployeeLeaveBalance
+} = require('../../controllers/leavePolicy/leavePolicyController');
 
-// Get all leave policies
-router.get('/', leavePolicyController.getAllLeavePolicies);
+// Get all leave policies for a specific company
+router.get('/company/:companyId', getAllLeavePolicies);
+
+// Create new leave policy for a specific company
+router.post('/company/:companyId', createLeavePolicy);
 
 // Get leave policy by ID
-router.get('/:id', leavePolicyController.getLeavePolicyById);
+router.get('/:id', getLeavePolicyById);
 
-// Create new leave policy
-router.post('/', leavePolicyController.createLeavePolicy);
+// Update leave policy by ID
+router.put('/:id', updateLeavePolicy);
 
-// Update leave policy
-router.put('/:id', leavePolicyController.updateLeavePolicy);
+// Delete leave policy by ID
+router.delete('/:id', deleteLeavePolicy);
 
-// Delete leave policy
-router.delete('/:id', leavePolicyController.deleteLeavePolicy);
+// Check leave eligibility
+router.post('/check-eligibility', checkLeaveEligibility);
 
 // Get employee leave balance
-router.get('/employee/:employee_id/balance', leavePolicyController.getEmployeeLeaveBalance);
+router.get('/employee-balance/:employeeId', getEmployeeLeaveBalance);
 
-module.exports = router; 
+module.exports = router;

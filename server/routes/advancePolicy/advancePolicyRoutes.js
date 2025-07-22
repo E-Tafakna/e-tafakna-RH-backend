@@ -1,23 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const advancePolicyController = require('../../controllers/advancePolicy/advancePolicyController');
+const {
+  getAllAdvancePolicies,
+  getAdvancePolicyById,
+  createAdvancePolicy,
+  updateAdvancePolicy,
+  deleteAdvancePolicy,
+  getDepartments,
+  checkAdvanceEligibility
+} = require('../../controllers/advancePolicy/advancePolicyController');
 
-// Get all advance policies
-router.get('/', advancePolicyController.getAllAdvancePolicies);
+// Get departments for a specific company
+router.get('/departments/:companyId', getDepartments);
+
+// Get all advance policies for a specific company
+router.get('/company/:companyId', getAllAdvancePolicies);
+
+// Create new advance policy for a specific company
+router.post('/company/:companyId', createAdvancePolicy);
 
 // Get advance policy by ID
-router.get('/:id', advancePolicyController.getAdvancePolicyById);
+router.get('/:id', getAdvancePolicyById);
 
-// Create new advance policy
-router.post('/', advancePolicyController.createAdvancePolicy);
+// Update advance policy by ID
+router.put('/:id', updateAdvancePolicy);
 
-// Update advance policy
-router.put('/:id', advancePolicyController.updateAdvancePolicy);
+// Delete advance policy by ID
+router.delete('/:id', deleteAdvancePolicy);
 
-// Delete advance policy
-router.delete('/:id', advancePolicyController.deleteAdvancePolicy);
+// Check eligibility
+router.post('/check-eligibility', checkAdvanceEligibility);
 
-// Check advance eligibility
-router.post('/check-eligibility', advancePolicyController.checkAdvanceEligibility);
 
-module.exports = router; 
+
+
+module.exports = router;

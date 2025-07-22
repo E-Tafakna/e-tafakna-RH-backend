@@ -6,6 +6,8 @@ const {
   createLeaveRequest,
   getEmployeeLeaveRequests,
   getLeaveRequestStats,
+  getHierarchicalLeaveRequests,
+
   getRemainingLeaveDays
 } = require('../../controllers/leaveRequest/leaveRequestController');
 
@@ -25,5 +27,9 @@ router.get('/employee/:employee_id', getEmployeeLeaveRequests);
 router.get('/stats/overview', getLeaveRequestStats);
 
 router.post('/getRemainingLeaveDays', getRemainingLeaveDays);
+
+
+router.get('/hierarchy/:employeeId', getHierarchicalLeaveRequests);
+
 
 module.exports = router; 

@@ -345,3 +345,4 @@ ADD COLUMN policy_id INT NULL;
 -- Ajout de policy_id à la table credit_request_details
 ALTER TABLE credit_request_details
 ADD COLUMN policy_id INT NULL;
+

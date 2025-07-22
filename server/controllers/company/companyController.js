@@ -195,12 +195,83 @@ const getCompanyStats = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 }
+const addDepartment = async (req, res) => {
+    try {
+        const { company_id, department_name } = req.body;
+        
+        if (!company_id || !department_name) {
+            return res.status(400).json({ error: 'company_id and department_name are required' });
+        }
+
+        const [result] = await pool.query(
+            'INSERT INTO company_departments (company_id, department_name) VALUES (?, ?)',
+            [company_id, department_name]
+        );
+
+        res.status(201).json({
+            id: result.insertId,
+            company_id,
+            department_name
+        });
+    } catch (err) {
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ error: 'Department already exists for this company' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// Update a department
+const updateDepartment = async (req, res) => {
+    try {
+        const { department_name } = req.body;
+        const { id } = req.params;
+
+        if (!department_name) {
+            return res.status(400).json({ error: 'department_name is required' });
+        }
+
+        const [result] = await pool.query(
+            'UPDATE company_departments SET department_name = ? WHERE id = ?',
+            [department_name, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Department not found' });
+        }
+
+        res.json({ message: 'Department updated successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// Delete a department
+const deleteDepartment = async (req, res) => {
+    try {
+        const [result] = await pool.query(
+            'DELETE FROM company_departments WHERE id = ?',
+            [req.params.id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Department not found' });
+        }
+
+        res.json({ message: 'Department deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
 
 module.exports = {
     getAllCompanies,
     getCompanyById,
     createCompany,
     updateCompany,
+    addDepartment,
+    updateDepartment,
+    deleteDepartment,
     deleteCompany,
     getCompanyStats
 };

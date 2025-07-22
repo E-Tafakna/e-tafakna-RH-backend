@@ -5,7 +5,8 @@ const {
   getDocumentRequestById,
   createDocumentRequest,
   getEmployeeDocumentRequests,
-  getDocumentRequestStats
+  getDocumentRequestStats,
+  getHierarchicalDocumentRequests
 } = require('../../controllers/documentRequest/documentRequestController');
 
 // Get all document requests
@@ -22,5 +23,8 @@ router.get('/employee/:employee_id', getEmployeeDocumentRequests);
 
 // Get document request statistics
 router.get('/stats/overview', getDocumentRequestStats);
+
+router.get('/hierarchy/:employee_id', getHierarchicalDocumentRequests);
+
 
 module.exports = router; 

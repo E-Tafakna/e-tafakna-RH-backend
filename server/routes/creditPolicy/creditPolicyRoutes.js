@@ -5,22 +5,26 @@ const {
   getCreditPolicyById,
   createCreditPolicy,
   updateCreditPolicy,
-  deleteCreditPolicy
+  deleteCreditPolicy,
+  getDepartments
 } = require('../../controllers/creditPolicy/creditPolicyController');
 
-// Get all credit policies
-router.get('/', getAllCreditPolicies);
+// Get departments for a specific company
+router.get('/departments/:companyId', getDepartments);
+
+// Get all credit policies for a specific company
+router.get('/company/:companyId', getAllCreditPolicies);
+
+// Create new credit policy for a specific company
+router.post('/company/:companyId', createCreditPolicy);
 
 // Get credit policy by ID
 router.get('/:id', getCreditPolicyById);
 
-// Create new credit policy
-router.post('/', createCreditPolicy);
-
-// Update credit policy
+// Update credit policy by ID
 router.put('/:id', updateCreditPolicy);
 
-// Delete credit policy
+// Delete credit policy by ID
 router.delete('/:id', deleteCreditPolicy);
 
-module.exports = router; 
+module.exports = router;

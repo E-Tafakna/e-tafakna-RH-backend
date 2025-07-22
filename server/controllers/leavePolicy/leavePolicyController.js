@@ -1,315 +1,405 @@
 const pool = require('../../database/index');
 
-const createLeavePolicy = async (req, res) => {
-    try {
-        const {
-            company_id,
-            min_months_seniority,
-            days_per_month_worked,
-            max_days_per_year,
-            policy_notes
-        } = req.body;
-
-        const [companyCheck] = await pool.query(
-            'SELECT id FROM company WHERE id = ?',
-            [company_id]
-        );
-        if (companyCheck.length === 0) {
-            return res.status(400).json({ error: 'Company not found' });
-        }
-
-        const [existingPolicy] = await pool.query(
-            'SELECT id FROM leave_policy WHERE company_id = ?',
-            [company_id]
-        );
-        if (existingPolicy.length > 0) {
-            return res.status(400).json({ error: 'Leave policy already exists for this company' });
-        }
-
-        const [result] = await pool.query(
-            `INSERT INTO leave_policy (
-                company_id, min_months_seniority,
-                days_per_month_worked, max_days_per_year, policy_notes
-            ) VALUES (?, ?, ?, ?, ?)`,
-            [
-               company_id, min_months_seniority,
-                days_per_month_worked, max_days_per_year, policy_notes
-            ]
-        );
-
-        res.status(201).json({
-            id: result.insertId,
-            message: 'Leave policy created successfully'
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-}
-
-// Get all leave policies
+// Get all leave policies for a company (grouped by department)
 const getAllLeavePolicies = async (req, res) => {
-    try {
-        const [rows] = await pool.query(`
-            SELECT * FROM leave_policy
-        `);
-        res.json(rows);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-}
+  try {
+    const companyId = req.params.companyId;
+
+    const [rows] = await pool.query(
+      `SELECT lp.*, cd.department_name 
+       FROM leave_policy lp
+       LEFT JOIN company_departments cd ON lp.department_id = cd.id
+       WHERE lp.company_id = ?
+       ORDER BY cd.department_name, lp.created_at DESC`,
+      [companyId]
+    );
+
+    // Group by department
+    const policiesByDepartment = rows.reduce((acc, policy) => {
+      const department = policy.department_name || 'Global';
+      if (!acc[department]) acc[department] = [];
+      acc[department].push(policy);
+      return acc;
+    }, {});
+
+    res.json(policiesByDepartment);
+  } catch (err) {
+    console.error('Erreur getAllLeavePolicies:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 // Get leave policy by ID
 const getLeavePolicyById = async (req, res) => {
-    try {
-        const [rows] = await pool.query(`
-            SELECT * FROM leave_policy WHERE id = ?
-        `, [req.params.id]);
-        
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Leave policy not found' });
-        }
-        res.json(rows[0]);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+  try {
+    const [rows] = await pool.query(
+      `SELECT lp.*, cd.department_name 
+       FROM leave_policy lp
+       LEFT JOIN company_departments cd ON lp.department_id = cd.id
+       WHERE lp.id = ?`,
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Leave policy not found' });
     }
-}
 
-// Get leave policy by employee
-const getLeavePolicyByEmployee = async (req, res) => {
-    try {
-        const { employee_id } = req.params;
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('Erreur getLeavePolicyById:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
-        // Check if employee exists
-        const [employeeCheck] = await pool.query(
-            'SELECT id, full_name, created_at FROM employees WHERE id = ?',
-            [employee_id]
-        );
+// Create new leave policy
+const createLeavePolicy = async (req, res) => {
+  try {
+    const companyId = req.params.companyId;
+    const {
+      department_id,
+      min_months_seniority,
+      days_per_month_worked,
+      max_days_per_year,
+      cooldown_days_between_requests,
+      requires_approval = true,
+      auto_approve = false,
+      is_active = true,
+      policy_notes
+    } = req.body;
 
-        if (employeeCheck.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Employee not found'
-            });
-        }
-
-        const [policies] = await pool.query(`
-                SELECT lp.*, e.full_name as employee_name, e.code_employe, c.name as company_name
-                FROM leave_policy lp 
-                LEFT JOIN employees e ON lp.employee_id = e.id
-                LEFT JOIN company c ON lp.company_id = c.id
-                WHERE lp.employee_id = ?
-                ORDER BY lp.created_at DESC
-            `, [employee_id]);
-
-        res.json({
-            success: true,
-            data: {
-                employee: employeeCheck[0],
-                policies: policies
-            }
-        });
-    } catch (error) {
-        console.error('Error fetching employee leave policies:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
+    if (
+      min_months_seniority === undefined ||
+      days_per_month_worked === undefined ||
+      max_days_per_year === undefined ||
+      cooldown_days_between_requests === undefined
+    ) {
+      return res.status(400).json({
+        error: 'Required fields: min_months_seniority, days_per_month_worked, max_days_per_year, cooldown_days_between_requests'
+      });
     }
-}
 
-// Calculate available leave days for employee
-const calculateAvailableLeave = async (req, res) => {
-    try {
-        const { employee_id, company_id } = req.params;
+    const [result] = await pool.query(
+      `INSERT INTO leave_policy (
+        company_id,
+        department_id,
+        min_months_seniority,
+        days_per_month_worked,
+        max_days_per_year,
+        cooldown_days_between_requests,
+        requires_approval,
+        auto_approve,
+        is_active,
+        policy_notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        companyId,
+        department_id || null,
+        min_months_seniority,
+        days_per_month_worked,
+        max_days_per_year,
+        cooldown_days_between_requests,
+        requires_approval,
+        auto_approve,
+        is_active,
+        policy_notes || null
+      ]
+    );
 
-        // Get employee details
-        const [employee] = await pool.query(
-            'SELECT id, full_name, created_at FROM employees WHERE id = ?',
-            [employee_id]
-        );
+    // Get the newly created policy with department name
+    const [newPolicy] = await pool.query(
+      `SELECT lp.*, cd.department_name 
+       FROM leave_policy lp
+       LEFT JOIN company_departments cd ON lp.department_id = cd.id
+       WHERE lp.id = ?`,
+      [result.insertId]
+    );
 
-        if (employee.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Employee not found'
-            });
-        }
-
-        // Get leave policy (first try employee-specific, then company-wide)
-        let [policy] = await pool.query(
-            'SELECT * FROM leave_policy WHERE employee_id = ? AND company_id = ?',
-            [employee_id, company_id]
-        );
-
-        if (policy.length === 0) {
-            [policy] = await pool.query(
-                'SELECT * FROM leave_policy WHERE employee_id IS NULL AND company_id = ?',
-                [company_id]
-            );
-        }
-
-        if (policy.length === 0) {
-            return res.json({
-                success: true,
-                data: {
-                    available_days: 0,
-                    reason: 'No leave policy found for this employee or company'
-                }
-            });
-        }
-
-        const policyData = policy[0];
-        const employeeData = employee[0];
-
-        // Calculate months worked
-        const startDate = new Date(employeeData.created_at);
-        const currentDate = new Date();
-        const monthsWorked = (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
-            (currentDate.getMonth() - startDate.getMonth());
-
-        // Check if employee meets minimum seniority
-        if (monthsWorked < policyData.min_months_seniority) {
-            return res.json({
-                success: true,
-                data: {
-                    available_days: 0,
-                    reason: `Employee needs ${policyData.min_months_seniority} months of seniority. Current: ${monthsWorked} months`,
-                    months_worked: monthsWorked,
-                    required_months: policyData.min_months_seniority
-                }
-            });
-        }
-
-        // Calculate earned days
-        const earnedDays = Math.floor(monthsWorked * policyData.days_per_month_worked);
-        const availableDays = Math.min(earnedDays, policyData.max_days_per_year);
-
-        res.json({
-            success: true,
-            data: {
-                available_days: availableDays,
-                earned_days: earnedDays,
-                max_days_per_year: policyData.max_days_per_year,
-                months_worked: monthsWorked,
-                days_per_month_worked: policyData.days_per_month_worked,
-                policy: policyData
-            }
-        });
-    } catch (error) {
-        console.error('Error calculating available leave:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error'
-        });
-    }
-}
+    res.status(201).json(newPolicy[0]);
+  } catch (err) {
+    console.error('Erreur createLeavePolicy:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 // Update leave policy
 const updateLeavePolicy = async (req, res) => {
-    try {
-        const {
-            min_months_seniority,
-            days_per_month_worked,
-            max_days_per_year,
-            policy_notes
-        } = req.body;
+  try {
+    const {
+      department_id,
+      min_months_seniority,
+      days_per_month_worked,
+      max_days_per_year,
+      cooldown_days_between_requests,
+      requires_approval,
+      auto_approve,
+      is_active,
+      policy_notes
+    } = req.body;
 
-        const [result] = await pool.query(
-            `UPDATE leave_policy SET
-                min_months_seniority = ?,
-                days_per_month_worked = ?,
-                max_days_per_year = ?,
-                policy_notes = ?
-            WHERE id = ?`,
-            [
-                min_months_seniority,
-                days_per_month_worked,
-                max_days_per_year,
-                policy_notes,
-                req.params.id
-            ]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Leave policy not found' });
-        }
-
-        res.json({ message: 'Leave policy updated successfully' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    const [policy] = await pool.query(
+      'SELECT id FROM leave_policy WHERE id = ?',
+      [req.params.id]
+    );
+    if (policy.length === 0) {
+      return res.status(404).json({ error: 'Leave policy not found' });
     }
-}
+
+    await pool.query(
+      `UPDATE leave_policy SET
+        department_id = ?,
+        min_months_seniority = ?,
+        days_per_month_worked = ?,
+        max_days_per_year = ?,
+        cooldown_days_between_requests = ?,
+        requires_approval = ?,
+        auto_approve = ?,
+        is_active = ?,
+        policy_notes = ?
+      WHERE id = ?`,
+      [
+        department_id || null,
+        min_months_seniority,
+        days_per_month_worked,
+        max_days_per_year,
+        cooldown_days_between_requests,
+        requires_approval,
+        auto_approve,
+        is_active,
+        policy_notes || null,
+        req.params.id
+      ]
+    );
+
+    // Get the updated policy with department name
+    const [updatedPolicy] = await pool.query(
+      `SELECT lp.*, cd.department_name 
+       FROM leave_policy lp
+       LEFT JOIN company_departments cd ON lp.department_id = cd.id
+       WHERE lp.id = ?`,
+      [req.params.id]
+    );
+
+    res.json(updatedPolicy[0]);
+  } catch (err) {
+    console.error('Erreur updateLeavePolicy:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 // Delete leave policy
 const deleteLeavePolicy = async (req, res) => {
-    try {
-        const [result] = await pool.query(
-            'DELETE FROM leave_policy WHERE id = ?',
-            [req.params.id]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'Leave policy not found' });
-        }
-
-        res.json({ message: 'Leave policy deleted successfully' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+  try {
+    const [policy] = await pool.query(
+      'SELECT id FROM leave_policy WHERE id = ?',
+      [req.params.id]
+    );
+    if (policy.length === 0) {
+      return res.status(404).json({ error: 'Leave policy not found' });
     }
-}
 
+    await pool.query('DELETE FROM leave_policy WHERE id = ?', [req.params.id]);
+
+    res.json({ message: 'Leave policy deleted successfully' });
+  } catch (err) {
+    console.error('Erreur deleteLeavePolicy:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Check leave eligibility for an employee
+const checkLeaveEligibility = async (req, res) => {
+  try {
+    const { employee_id, requested_days } = req.body;
+
+    if (!employee_id || requested_days === undefined) {
+      return res.status(400).json({ error: 'employee_id and requested_days are required' });
+    }
+
+    // Get employee details
+    const [employee] = await pool.query(
+      `SELECT e.*, cd.department_name 
+       FROM employees e
+       LEFT JOIN company_departments cd ON e.department_id = cd.id
+       WHERE e.id = ?`,
+      [employee_id]
+    );
+
+    if (employee.length === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
+    }
+
+    // Get applicable leave policy (department-specific or global)
+    const [policy] = await pool.query(
+      `SELECT lp.* FROM leave_policy lp
+       WHERE lp.company_id = ? AND lp.is_active = 1
+       AND (lp.department_id IS NULL OR lp.department_id = ?)
+       ORDER BY lp.department_id IS NOT NULL DESC
+       LIMIT 1`,
+      [employee[0].company_id, employee[0].department_id]
+    );
+
+    if (policy.length === 0) {
+      return res.status(404).json({ error: 'No active leave policy found for this employee' });
+    }
+
+    const currentPolicy = policy[0];
+
+    // Calculate months worked
+    const startDate = new Date(employee[0].created_at);
+    const currentDate = new Date();
+    const monthsWorked = (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (currentDate.getMonth() - startDate.getMonth());
+
+    // Calculate earned days and available days
+    const earnedDays = monthsWorked * currentPolicy.days_per_month_worked;
+    const availableDays = Math.min(earnedDays, currentPolicy.max_days_per_year);
+
+    // Get approved leave days used this year
+    const [leaveRequests] = await pool.query(
+      `SELECT SUM(DATEDIFF(lrd.end_date, lrd.start_date) + 1 as days_used
+       FROM leave_request_details lrd
+       JOIN requests r ON lrd.request_id = r.id
+       WHERE r.employee_id = ? AND YEAR(lrd.start_date) = YEAR(CURRENT_DATE)
+       AND r.result = 'valide'`,
+      [employee_id]
+    );
+
+    const daysUsed = leaveRequests[0].days_used || 0;
+    const remainingDays = availableDays - daysUsed;
+
+    // Check eligibility
+    const eligibility = {
+      is_eligible: true,
+      reasons: []
+    };
+
+    if (monthsWorked < currentPolicy.min_months_seniority) {
+      eligibility.is_eligible = false;
+      eligibility.reasons.push(`Minimum ${currentPolicy.min_months_seniority} months seniority required (current: ${monthsWorked} months)`);
+    }
+
+    if (requested_days > remainingDays) {
+      eligibility.is_eligible = false;
+      eligibility.reasons.push(`Requested days (${requested_days}) exceed available days (${remainingDays})`);
+    }
+
+    // Check cooldown period if needed
+    if (currentPolicy.cooldown_days_between_requests > 0) {
+      const [lastLeave] = await pool.query(
+        `SELECT MAX(lrd.end_date) as last_end_date
+         FROM leave_request_details lrd
+         JOIN requests r ON lrd.request_id = r.id
+         WHERE r.employee_id = ? AND r.result = 'valide'`,
+        [employee_id]
+      );
+
+      if (lastLeave[0].last_end_date) {
+        const lastEndDate = new Date(lastLeave[0].last_end_date);
+        const daysSince = Math.floor((currentDate - lastEndDate) / (1000 * 60 * 60 * 24));
+        
+        if (daysSince < currentPolicy.cooldown_days_between_requests) {
+          eligibility.is_eligible = false;
+          eligibility.reasons.push(
+            `Must wait ${currentPolicy.cooldown_days_between_requests} days between leave requests (last leave ended ${daysSince} days ago)`
+          );
+        }
+      }
+    }
+
+    res.json({
+      policy: currentPolicy,
+      employee: employee[0],
+      eligibility,
+      months_worked: monthsWorked,
+      earned_days: earnedDays,
+      max_days_per_year: currentPolicy.max_days_per_year,
+      days_used: daysUsed,
+      remaining_days: remainingDays
+    });
+  } catch (err) {
+    console.error('Erreur checkLeaveEligibility:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get employee leave balance
 const getEmployeeLeaveBalance = async (req, res) => {
-    try {
-        const { employee_id } = req.params;
-        const currentYear = new Date().getFullYear();
+  try {
+    const { employee_id } = req.params;
 
-        // Get employee's leave policy
-        const [policy] = await pool.query(
-            'SELECT * FROM leave_policy WHERE employee_id = ?',
-            [employee_id]
-        );
+    // Get employee details
+    const [employee] = await pool.query(
+      `SELECT e.*, cd.department_name 
+       FROM employees e
+       LEFT JOIN company_departments cd ON e.department_id = cd.id
+       WHERE e.id = ?`,
+      [employee_id]
+    );
 
-        if (policy.length === 0) {
-            return res.status(404).json({ error: 'Leave policy not found for this employee' });
-        }
-
-        // Get employee's leave requests for the current year
-        const [leaveRequests] = await pool.query(
-            `SELECT lrd.*, r.status, r.result
-             FROM leave_request_details lrd
-             JOIN requests r ON lrd.request_id = r.id
-             WHERE r.employee_id = ? AND YEAR(lrd.start_date) = ?
-             AND r.type = 'conge' AND r.result = 'valide'`,
-            [employee_id, currentYear]
-        );
-
-        // Calculate total days taken
-        const totalDaysTaken = leaveRequests.reduce((total, request) => {
-            const start = new Date(request.start_date);
-            const end = new Date(request.end_date);
-            const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-            return total + days;
-        }, 0);
-
-        // Calculate remaining days
-        const remainingDays = policy[0].max_days_per_year - totalDaysTaken;
-
-        res.json({
-            policy: policy[0],
-            total_days_taken: totalDaysTaken,
-            remaining_days: remainingDays,
-            max_days_per_year: policy[0].max_days_per_year
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    if (employee.length === 0) {
+      return res.status(404).json({ error: 'Employee not found' });
     }
-}
+
+    // Get applicable leave policy
+    const [policy] = await pool.query(
+      `SELECT lp.* FROM leave_policy lp
+       WHERE lp.company_id = ? AND lp.is_active = 1
+       AND (lp.department_id IS NULL OR lp.department_id = ?)
+       ORDER BY lp.department_id IS NOT NULL DESC
+       LIMIT 1`,
+      [employee[0].company_id, employee[0].department_id]
+    );
+
+    if (policy.length === 0) {
+      return res.status(404).json({ error: 'No active leave policy found for this employee' });
+    }
+
+    const currentPolicy = policy[0];
+
+    // Calculate months worked
+    const startDate = new Date(employee[0].created_at);
+    const currentDate = new Date();
+    const monthsWorked = (currentDate.getFullYear() - startDate.getFullYear()) * 12 +
+      (currentDate.getMonth() - startDate.getMonth());
+
+    // Calculate earned days and available days
+    const earnedDays = monthsWorked * currentPolicy.days_per_month_worked;
+    const availableDays = Math.min(earnedDays, currentPolicy.max_days_per_year);
+
+    // Get approved leave days used this year
+    const [leaveRequests] = await pool.query(
+      `SELECT SUM(DATEDIFF(lrd.end_date, lrd.start_date) + 1 as days_used
+       FROM leave_request_details lrd
+       JOIN requests r ON lrd.request_id = r.id
+       WHERE r.employee_id = ? AND YEAR(lrd.start_date) = YEAR(CURRENT_DATE)
+       AND r.result = 'valide'`,
+      [employee_id]
+    );
+
+    const daysUsed = leaveRequests[0].days_used || 0;
+    const remainingDays = availableDays - daysUsed;
+
+    res.json({
+      policy: currentPolicy,
+      employee: employee[0],
+      months_worked: monthsWorked,
+      earned_days: earnedDays,
+      max_days_per_year: currentPolicy.max_days_per_year,
+      days_used: daysUsed,
+      remaining_days: remainingDays
+    });
+  } catch (err) {
+    console.error('Erreur getEmployeeLeaveBalance:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
 
 module.exports = {
-    getAllLeavePolicies,
-    getLeavePolicyById,
-    createLeavePolicy,
-    updateLeavePolicy,
-    deleteLeavePolicy,
-    getEmployeeLeaveBalance
+  getAllLeavePolicies,
+  getLeavePolicyById,
+  createLeavePolicy,
+  updateLeavePolicy,
+  deleteLeavePolicy,
+  checkLeaveEligibility,
+  getEmployeeLeaveBalance
 };
