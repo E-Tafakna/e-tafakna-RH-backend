@@ -38,7 +38,7 @@ DROP TABLE IF EXISTS depot_requests;
 DROP TABLE IF EXISTS notifications;
 
 -- Employees Table
-CREATE TABLE IF NOT EXISTS employees (
+CREATE TABLE IF NOT EXISTS employees ( 
     id INT AUTO_INCREMENT PRIMARY KEY,
     code_employe VARCHAR(20) UNIQUE NOT NULL,
     full_name VARCHAR(100) NOT NULL,
@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS employees (
     email VARCHAR(100),
     phone VARCHAR(20),
     profession VARCHAR(100),
+    department VARCHAR(100) NOT NULL,
     brut_salary DECIMAL(10, 2),
     net_salary DECIMAL(10, 2),
     work_experience INT DEFAULT 0,
@@ -65,9 +66,9 @@ CREATE TABLE IF NOT EXISTS employees (
     employment_type ENUM('full_time', 'part_time', 'contract', 'intern') DEFAULT 'full_time',
     contract_type ENUM('CDD', 'CDI', 'CIVP', 'Stage', 'Consultant'),
     role ENUM('employee', 'admin') DEFAULT 'employee',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    managerId INT DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
 
 -- Company Table
 CREATE TABLE IF NOT EXISTS company (
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS company (
 CREATE TABLE IF NOT EXISTS document_templates (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    template_type ENUM('Stage', 'travaile',) NOT NULL,
+    template_type ENUM('Stage', 'travaile') NOT NULL,
     description TEXT,
     file_url TEXT,
     output_format ENUM('pdf', 'docx', 'html') DEFAULT 'pdf',
@@ -104,21 +105,11 @@ CREATE TABLE IF NOT EXISTS document_templates (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     signature_image_url TEXT,
-    signature_position ENUM(
-        'top_left',
-        'top_right',
-        'bottom_left',
-        'bottom_right'
-    ) DEFAULT 'bottom_right',
+    signature_position ENUM('top_left', 'top_right', 'bottom_left', 'bottom_right') DEFAULT 'bottom_right',
     signature_size VARCHAR(20) DEFAULT 'medium',
     signature_included BOOLEAN DEFAULT TRUE,
     cachet_image_url TEXT,
-    cachet_position ENUM(
-        'top_left',
-        'top_right',
-        'bottom_left',
-        'bottom_right'
-    ) DEFAULT 'bottom_right',
+    cachet_position ENUM('top_left', 'top_right', 'bottom_left', 'bottom_right') DEFAULT 'bottom_right',
     cachet_size VARCHAR(20) DEFAULT 'medium',
     cachet_included BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (created_by) REFERENCES employees(id)
@@ -130,7 +121,6 @@ CREATE TABLE IF NOT EXISTS docToPrint (
     output_format ENUM('pdf', 'docx', 'html') DEFAULT 'pdf',
     file_url TEXT NOT NULL,
     file_name VARCHAR(255) NOT NULL,
-    doc_description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -232,14 +222,13 @@ CREATE TABLE IF NOT EXISTS leave_policy (
 -- Leave Request Details
 CREATE TABLE IF NOT EXISTS leave_request_details (
     request_id INT PRIMARY KEY,
-    leave_type VARCHAR(20) CHECK (
-        leave_type IN ('annuel', 'maladie', 'exceptionnel')
-    ) NOT NULL,
+    leave_type ENUM('annuel', 'maladie', 'exceptionnel') NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     reason TEXT,
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE
 );
+
 
 -- Credit Policy
 CREATE TABLE IF NOT EXISTS credit_policy (
@@ -282,3 +271,77 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES employees(id)
 );
+
+CREATE TABLE IF NOT EXISTS depot_requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    employee_id INT NOT NULL,
+    document_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    date_of_deposit DATE, 
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (employee_id) REFERENCES employees(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS employee_managers (
+  employee_id INT NOT NULL,
+  manager_id INT NOT NULL,
+  PRIMARY KEY (employee_id, manager_id),
+  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+  FOREIGN KEY (manager_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS employee_ceos (
+  employee_id INT NOT NULL,
+  ceo_id INT NOT NULL,
+  PRIMARY KEY (employee_id, ceo_id),
+  FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+  FOREIGN KEY (ceo_id) REFERENCES employees(id) ON DELETE CASCADE
+);
+
+-- create table comp_dep 
+CREATE TABLE IF NOT EXISTS company_departments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    department_name VARCHAR(255) NOT NULL,
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
+
+-- liaison entre policies et dep_company 
+
+ALTER TABLE advance_policy ADD COLUMN department_id INT NULL;
+ALTER TABLE advance_policy ADD FOREIGN KEY (department_id) REFERENCES company_departments(id) ON DELETE CASCADE;
+
+ALTER TABLE credit_policy ADD COLUMN department_id INT NULL;
+ALTER TABLE credit_policy ADD FOREIGN KEY (department_id) REFERENCES company_departments(id) ON DELETE CASCADE;
+
+ALTER TABLE leave_policy ADD COLUMN department_id INT NULL;
+ALTER TABLE leave_policy ADD FOREIGN KEY (department_id) REFERENCES company_departments(id) ON DELETE CASCADE;
+
+
+
+-- add isExceptional and ExceptionalReason :
+ALTER TABLE requests
+ADD COLUMN is_exceptional BOOLEAN DEFAULT FALSE,
+ADD COLUMN exception_reason TEXT;
+
+
+-- add reson and urgency to document :
+
+ALTER TABLE document_request_details
+ADD COLUMN urgency_level VARCHAR(50);
+ADD COLUMN reason TEXT NOT NULL DEFAULT '';
+
+
+-- Ajout de policy_id à la table leave_request_details
+ALTER TABLE leave_request_details
+ADD COLUMN policy_id INT NULL;
+
+-- Ajout de policy_id à la table advance_request_details
+ALTER TABLE advance_request_details
+ADD COLUMN policy_id INT NULL;
+
+-- Ajout de policy_id à la table credit_request_details
+ALTER TABLE credit_request_details
+ADD COLUMN policy_id INT NULL;
