@@ -1,13 +1,13 @@
 const pool = require('../../database/index');
 
+// GET all document requests
 const getAllDocumentRequests = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
         r.*,
         drd.document_type,
-        drd.reason,
-        drd.urgency_level,
+        drd.notes,
         e.full_name as employee_name,
         e.code_employe
       FROM requests r
@@ -22,14 +22,14 @@ const getAllDocumentRequests = async (req, res) => {
   }
 };
 
+// GET one document request by ID
 const getDocumentRequestById = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
         r.*,
         drd.document_type,
-        drd.reason,
-        drd.urgency_level,
+        drd.notes,
         e.full_name as employee_name,
         e.code_employe
       FROM requests r
@@ -37,7 +37,7 @@ const getDocumentRequestById = async (req, res) => {
       JOIN employees e ON r.employee_id = e.id
       WHERE r.id = ? AND r.type = 'document'
     `, [req.params.id]);
-    
+
     if (rows.length === 0) {
       return res.status(404).json({ error: 'Document request not found' });
     }
@@ -47,13 +47,13 @@ const getDocumentRequestById = async (req, res) => {
   }
 };
 
+// POST create document request
 const createDocumentRequest = async (req, res) => {
   try {
     const {
       employee_id,
       document_type,
-      reason,
-      urgency_level,
+      notes,
       service
     } = req.body;
 
@@ -71,14 +71,6 @@ const createDocumentRequest = async (req, res) => {
       return res.status(400).json({ error: 'Employee not found' });
     }
 
-    const [documentType] = await pool.query(
-      'SELECT id FROM document_types WHERE type = ?',
-      [document_type]
-    );
-    if (documentType.length === 0) {
-      return res.status(400).json({ error: 'Invalid document type' });
-    }
-
     const connection = await pool.getConnection();
     await connection.beginTransaction();
 
@@ -94,9 +86,9 @@ const createDocumentRequest = async (req, res) => {
 
       await connection.query(
         `INSERT INTO document_request_details (
-          request_id, document_type, reason, urgency_level
-        ) VALUES (?, ?, ?, ?)`,
-        [requestId, document_type, reason, urgency_level || 'normal']
+          request_id, document_type, notes
+        ) VALUES (?, ?, ?)`,
+        [requestId, document_type, notes || null]
       );
 
       await connection.commit();
@@ -115,26 +107,27 @@ const createDocumentRequest = async (req, res) => {
   }
 };
 
+// GET document requests by employee ID
 const getEmployeeDocumentRequests = async (req, res) => {
   try {
     const [rows] = await pool.query(`
       SELECT 
         r.*,
         drd.document_type,
-        drd.reason,
-        drd.urgency_level
+        drd.notes
       FROM requests r
       JOIN document_request_details drd ON r.id = drd.request_id
       WHERE r.employee_id = ? AND r.type = 'document'
       ORDER BY r.submission_date DESC
     `, [req.params.employee_id]);
-    
+
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+// GET stats for document requests
 const getDocumentRequestStats = async (req, res) => {
   try {
     const [stats] = await pool.query(`
@@ -143,15 +136,13 @@ const getDocumentRequestStats = async (req, res) => {
         COUNT(CASE WHEN r.status = 'en_cours' THEN 1 END) as pending_requests,
         COUNT(CASE WHEN r.status = 'traite' AND r.result = 'valide' THEN 1 END) as approved_requests,
         COUNT(CASE WHEN r.status = 'traite' AND r.result = 'refused' THEN 1 END) as rejected_requests,
-        drd.document_type,
-        drd.urgency_level,
-        COUNT(CASE WHEN drd.urgency_level = 'high' THEN 1 END) as high_urgency_count
+        drd.document_type
       FROM requests r
       JOIN document_request_details drd ON r.id = drd.request_id
       WHERE r.type = 'document'
-      GROUP BY drd.document_type, drd.urgency_level
+      GROUP BY drd.document_type
     `);
-    
+
     res.json(stats);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -230,3 +221,4 @@ module.exports = {
   getDocumentRequestStats,
   getHierarchicalDocumentRequests
 }; 
+

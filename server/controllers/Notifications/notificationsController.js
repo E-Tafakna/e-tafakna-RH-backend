@@ -51,7 +51,7 @@ const getNotificationsByCreator = async (req, res) => {
 
 const createNotification = async (req, res) => {
   try {
-    const { title, message, created_by } = req.body;
+    const { title, message, created_by ,type} = req.body;
 
     if (!title || !message || !created_by) {
       return res.status(400).json({ 
@@ -72,9 +72,9 @@ const createNotification = async (req, res) => {
     }
 
     const [result] = await pool.query(
-      `INSERT INTO notifications (title, message, created_by)
-       VALUES (?, ?, ?)`,
-      [title, message, created_by]
+      `INSERT INTO notifications (title, message, created_by,type)
+       VALUES (?, ?, ? ,?)`,
+      [title, message, created_by,type]
     );
 
     res.status(201).json({ 

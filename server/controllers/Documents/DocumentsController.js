@@ -78,7 +78,8 @@ const createDocument = async (req, res) => {
       generated,
       uploaded,
       template_id,
-      notes
+      notes,
+      isExeptional
     } = req.body;
 
     // Fetch employee data
@@ -110,27 +111,30 @@ const createDocument = async (req, res) => {
       return res.status(400).json({ error: 'Company data not found' });
     }
 
-    // Cooldown check
-    const [[lastGenerated]] = await pool.query(
-      `SELECT generated_at 
+    // Cooldown check#
+
+    if (isExeptional === false) {
+      const [[lastGenerated]] = await pool.query(
+        `SELECT generated_at 
        FROM documents 
        WHERE employee_id = ? 
          AND template_id = ? 
          AND \`generated\` = TRUE
        ORDER BY generated_at DESC 
        LIMIT 1`,
-      [employee_id, template_id]
-    );
+        [employee_id, template_id]
+      );
 
-    if (lastGenerated) {
-      const now = new Date();
-      const lastDate = new Date(lastGenerated.generated_at);
-      const diffMonths = (now.getFullYear() - lastDate.getFullYear()) * 12 + (now.getMonth() - lastDate.getMonth());
+      if (lastGenerated) {
+        const now = new Date();
+        const lastDate = new Date(lastGenerated.generated_at);
+        const diffMonths = (now.getFullYear() - lastDate.getFullYear()) * 12 + (now.getMonth() - lastDate.getMonth());
 
-      if (diffMonths < template.cooldown_months_between_advance) {
-        return res.status(429).json({
-          error: `Cooldown period not finished. Please wait ${template.cooldown_months_between_advance - diffMonths} more month(s).`
-        });
+        if (diffMonths < template.cooldown_months_between_advance) {
+          return res.status(429).json({
+            error: `Cooldown period not finished. Please wait ${template.cooldown_months_between_advance - diffMonths} more month(s).`
+          });
+        }
       }
     }
 
@@ -141,7 +145,7 @@ const createDocument = async (req, res) => {
       company,
       notes
     });
-    console.log(generationResponse.data , "generationResponse")
+    console.log(generationResponse.data, "generationResponse")
     const file_url = generationResponse.data.url;
 
     if (!file_url) {

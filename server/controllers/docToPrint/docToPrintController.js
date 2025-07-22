@@ -2,7 +2,7 @@ const db = require('../../database/index');
 
 const createDocToPrint = async (req, res) => {
     try {
-        const { output_format, file_url, file_name } = req.body;
+        const { output_format, file_url, file_name , doc_description } = req.body;
 
         if (!file_url) {
             return res.status(400).json({
@@ -20,8 +20,8 @@ const createDocToPrint = async (req, res) => {
         }
 
         const [result] = await db.execute(
-            'INSERT INTO docToPrint (output_format, file_url , file_name ) VALUES (?, ? , ?)',
-            [output_format || 'pdf', file_url, file_name]
+            'INSERT INTO docToPrint (output_format, file_url , file_name , doc_description) VALUES (?, ? , ? ,?)',
+            [output_format || 'pdf', file_url, file_name , doc_description]
         );
 
         res.status(201).json({
