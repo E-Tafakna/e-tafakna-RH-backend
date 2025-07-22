@@ -164,9 +164,9 @@ const createAdvanceRequest = async (req, res) => {
     try {
       const [requestResult] = await connection.query(
         `INSERT INTO requests (
-          employee_id, type, service, status, result
-        ) VALUES (?, 'advance', ?, 'en_cours', 'valide')`,
-        [employee_id, service]
+          employee_id, type, service, status, result , is_exceptional
+        ) VALUES (?, 'advance', ?, 'en_cours', 'valide' , ?)`,
+        [employee_id, service , is_exceptional]
       );
 
       const requestId = requestResult.insertId;

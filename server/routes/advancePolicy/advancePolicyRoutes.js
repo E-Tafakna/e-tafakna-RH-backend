@@ -12,7 +12,7 @@ router.get('/:id', advancePolicyController.getAdvancePolicyById);
 router.post('/', advancePolicyController.createAdvancePolicy);
 
 // Update advance policy
-// router.put('/:id', advancePolicyController.updateAdvancePolicy);
+router.put('/:id', advancePolicyController.updateAdvancePolicy);
 
 // Delete advance policy
 router.delete('/:id', advancePolicyController.deleteAdvancePolicy);

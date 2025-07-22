@@ -298,3 +298,50 @@ CREATE TABLE IF NOT EXISTS employee_ceos (
   FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
   FOREIGN KEY (ceo_id) REFERENCES employees(id) ON DELETE CASCADE
 );
+
+-- create table comp_dep 
+CREATE TABLE IF NOT EXISTS company_departments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    company_id INT NOT NULL,
+    department_name VARCHAR(255) NOT NULL,
+    FOREIGN KEY (company_id) REFERENCES company(id) ON DELETE CASCADE
+);
+
+
+-- liaison entre policies et dep_company 
+
+ALTER TABLE advance_policy ADD COLUMN department_id INT NULL;
+ALTER TABLE advance_policy ADD FOREIGN KEY (department_id) REFERENCES company_departments(id) ON DELETE CASCADE;
+
+ALTER TABLE credit_policy ADD COLUMN department_id INT NULL;
+ALTER TABLE credit_policy ADD FOREIGN KEY (department_id) REFERENCES company_departments(id) ON DELETE CASCADE;
+
+ALTER TABLE leave_policy ADD COLUMN department_id INT NULL;
+ALTER TABLE leave_policy ADD FOREIGN KEY (department_id) REFERENCES company_departments(id) ON DELETE CASCADE;
+
+
+
+-- add isExceptional and ExceptionalReason :
+ALTER TABLE requests
+ADD COLUMN is_exceptional BOOLEAN DEFAULT FALSE,
+ADD COLUMN exception_reason TEXT;
+
+
+-- add reson and urgency to document :
+
+ALTER TABLE document_request_details
+ADD COLUMN urgency_level VARCHAR(50);
+ADD COLUMN reason TEXT NOT NULL DEFAULT '';
+
+
+-- Ajout de policy_id à la table leave_request_details
+ALTER TABLE leave_request_details
+ADD COLUMN policy_id INT NULL;
+
+-- Ajout de policy_id à la table advance_request_details
+ALTER TABLE advance_request_details
+ADD COLUMN policy_id INT NULL;
+
+-- Ajout de policy_id à la table credit_request_details
+ALTER TABLE credit_request_details
+ADD COLUMN policy_id INT NULL;
