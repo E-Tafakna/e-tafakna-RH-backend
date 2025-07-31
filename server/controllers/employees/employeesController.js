@@ -1,4 +1,5 @@
 const pool = require('../../database/index');
+const { sendWelcomeEmail } = require('../../service/emailService');
 
 const getAllEmployees = async (req, res) => {
   try {
@@ -149,6 +150,21 @@ const createEmployee = async (req, res) => {
 
     const employeeId = result.insertId;
 
+
+
+
+     const [[newEmployee]] = await pool.query(
+      'SELECT * FROM employees WHERE id = ?',
+      [employeeId]
+    );
+
+    // Envoi email
+    const emailResponse = newEmployee.email 
+      ? await sendWelcomeEmail(newEmployee)
+      : { success: false, error: 'No email' };
+
+    
+
     // Insert relations
     for (const managerId of manager_ids) {
       await pool.query(
@@ -164,12 +180,20 @@ const createEmployee = async (req, res) => {
       );
     }
 
-    res.status(201).json({
-      id: employeeId,
-      message: 'Employee created successfully'
+     return res.status(201).json({
+      success: true,
+      message: 'Employee created successfully',
+      employee: {
+        id: employeeId,
+        name: newEmployee.full_name,
+        email: newEmployee.email
+      },
+      email: emailResponse
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('[CREATE EMPLOYEE ERROR]', err);
+    return res.status(500).json({ error: err.message });
   }
 };
 
@@ -190,7 +214,7 @@ const updateEmployee = async (req, res) => {
       return res.status(404).json({ error: 'Employee not found' });
     }
 
-    // Validation
+    
     let managerList = Array.isArray(manager_ids) ? manager_ids : [manager_ids];
     let ceoList = Array.isArray(ceo_ids) ? ceo_ids : [ceo_ids];
 
