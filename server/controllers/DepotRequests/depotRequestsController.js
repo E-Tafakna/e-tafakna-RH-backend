@@ -9,7 +9,7 @@ const getAllDepotRequests = async (req, res) => {
       ORDER BY dr.created_at DESC
     `);
     res.json(rows);
-  } catch (err) {
+  } catch (err) { 
     res.status(500).json({ error: err.message });
   }
 };
@@ -51,7 +51,7 @@ const getDepotRequestsByEmployee = async (req, res) => {
 
 const createDepotRequest = async (req, res) => {
   try {
-    const { employee_id, document_name, description, date_of_deposit } = req.body;
+    const { employee_id, document_name, description, file_url, date_of_deposit } = req.body;
 
     if (!employee_id || !document_name) {
       return res.status(400).json({ 
@@ -60,9 +60,9 @@ const createDepotRequest = async (req, res) => {
     }
 
     const [result] = await pool.query(
-      `INSERT INTO depot_requests (employee_id, document_name, description, date_of_deposit)
-       VALUES (?, ?, ?, ?)`,
-      [employee_id, document_name, description || null, date_of_deposit || new Date()]
+      `INSERT INTO depot_requests (employee_id, document_name, description, file_url, date_of_deposit)
+       VALUES (?, ?, ?, ?, ?)`,
+      [employee_id, document_name, description || null, file_url || null, date_of_deposit || new Date()]
     );
 
     res.status(201).json({ 
@@ -76,12 +76,12 @@ const createDepotRequest = async (req, res) => {
 
 const updateDepotRequest = async (req, res) => {
   try {
-    const { document_name, description, date_of_deposit } = req.body;
+    const { document_name, description, file_url, date_of_deposit } = req.body;
     const { id } = req.params;
 
     const [result] = await pool.query(
       `UPDATE depot_requests 
-       SET document_name = ?, description = ?, date_of_deposit = ?
+       SET document_name = ?, description = ?, file_url = ? ,date_of_deposit = ?
        WHERE id = ?`,
       [document_name, description, date_of_deposit, id]
     );
@@ -120,6 +120,7 @@ const getDepotRequestStats = async (req, res) => {
         COUNT(*) as total_requests,
         COUNT(DISTINCT employee_id) as total_employees,
         COUNT(DISTINCT document_name) as unique_documents,
+        file_url,
         DATE_FORMAT(MIN(created_at), '%Y-%m-%d') as first_request_date,
         DATE_FORMAT(MAX(created_at), '%Y-%m-%d') as last_request_date
       FROM depot_requests

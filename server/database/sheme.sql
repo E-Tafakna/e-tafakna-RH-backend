@@ -278,6 +278,7 @@ CREATE TABLE IF NOT EXISTS depot_requests (
     document_name VARCHAR(255) NOT NULL,
     description TEXT,
     date_of_deposit DATE, 
+    file_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (employee_id) REFERENCES employees(id)
 );
